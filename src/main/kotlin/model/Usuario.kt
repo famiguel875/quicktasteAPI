@@ -9,5 +9,6 @@ data class Usuario(
     val username: String,
     var roles: String? = null,    // e.g. "USER" | "ADMIN"
     val image: String? = null,    // URL o ruta
-    var password: String          // contraseña (hasheada en producción)
+    var password: String, // contraseña (hasheada en producción)
+    var wallet: Int = 0
 )

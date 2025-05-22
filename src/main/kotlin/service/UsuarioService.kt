@@ -42,7 +42,6 @@ class UsuarioService(
         if (dto.password != dto.passwordRepeat) {
             throw BadRequestException("Las contraseñas no coinciden")
         }
-        // Verificamos unicidad por username
         if (usuarioRepository.findByUsername(dto.username).isPresent) {
             throw BadRequestException("Ya existe un usuario con username '${dto.username}'")
         }
@@ -67,7 +66,7 @@ class UsuarioService(
     }
 
     // -------------------
-    // Actualizar usuario
+    // Actualizar usuario (sin tocar wallet)
     // -------------------
     fun update(username: String, dto: UsuarioRegisterDTO): UsuarioDTO {
         if (username != dto.username) {
@@ -76,20 +75,20 @@ class UsuarioService(
         val existing = usuarioRepository.findByUsername(username)
             .orElseThrow { NotFoundException("Usuario con username '$username' no encontrado") }
 
-        // Si viene nueva contraseña, la re-hasheamos; si no, la mantenemos
         val newPassword = if (dto.password.isNotBlank()) {
             passwordEncoder.encode(dto.password)
         } else {
             existing.password
         }
 
-        val updatedEntity = existing.copy(
+        val updated = existing.copy(
             username = dto.username,
+            password = newPassword,
             roles    = dto.rol ?: existing.roles,
-            image    = existing.image,   // no cambiamos imagen aquí
-            password = newPassword
+            image    = existing.image,
+            wallet   = existing.wallet
         )
-        val saved = usuarioRepository.save(updatedEntity)
+        val saved = usuarioRepository.save(updated)
         return saved.toDTO()
     }
 
@@ -104,7 +103,18 @@ class UsuarioService(
     }
 
     // ------------------------------------
-    // Mappers internos (dentro del service)
+    // Actualizar solo el wallet por username
+    // ------------------------------------
+    fun updateWallet(username: String, newWallet: Int): UsuarioDTO {
+        val u = usuarioRepository.findByUsername(username)
+            .orElseThrow { NotFoundException("Usuario con username '$username' no encontrado") }
+        u.wallet = newWallet
+        val saved = usuarioRepository.save(u)
+        return saved.toDTO()
+    }
+
+    // ------------------------------------
+    // Mappers internos
     // ------------------------------------
     private fun Usuario.toDTO(): UsuarioDTO =
         UsuarioDTO(
@@ -112,15 +122,19 @@ class UsuarioService(
             email    = this.email,
             password = this.password,
             rol      = this.roles ?: "USER",
-            image    = this.image
+            image    = this.image,
+            wallet   = this.wallet
         )
 
     private fun UsuarioRegisterDTO.toEntity(passwordEncoder: PasswordEncoder): Usuario =
         Usuario(
             email    = this.email,
             username = this.username,
+            password = passwordEncoder.encode(this.password),
             roles    = this.rol ?: "USER",
-            image    = this.image,                             // ← map it
-            password = passwordEncoder.encode(this.password)
+            image    = this.image,
+            wallet   = 0
         )
 }
+
+

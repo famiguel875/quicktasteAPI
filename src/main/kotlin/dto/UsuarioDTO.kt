@@ -5,5 +5,6 @@ data class UsuarioDTO(
     val username: String,
     val password: String,
     val rol: String,
-    val image: String?
+    val image: String?,
+    val wallet: Int
 )

@@ -3,6 +3,7 @@ package com.es.controller
 import com.es.dto.LoginUsuarioDTO
 import com.es.dto.UsuarioDTO
 import com.es.dto.UsuarioRegisterDTO
+import com.es.error.exception.BadRequestException
 import com.es.error.exception.ForbiddenException
 import com.es.error.exception.NotAuthorizedException
 import com.es.service.TokenService
@@ -124,6 +125,21 @@ class UsuarioController {
         }
         usuarioService.delete(username)
         return ResponseEntity.noContent().build()
+    }
+
+    /**
+     * PUT /usuarios/{username}/wallet
+     * Actualiza únicamente el saldo (wallet) del usuario.
+     */
+    @PutMapping("/{username}/wallet")
+    fun updateWallet(
+        @PathVariable username: String,
+        @RequestBody body: Map<String, Int>
+    ): ResponseEntity<UsuarioDTO> {
+        val newWallet = body["wallet"]
+            ?: throw BadRequestException("Debe proporcionarse el nuevo saldo bajo la clave 'wallet'")
+        val updated = usuarioService.updateWallet(username, newWallet)
+        return ResponseEntity.ok(updated)
     }
 }
 
