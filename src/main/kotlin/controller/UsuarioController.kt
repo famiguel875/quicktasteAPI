@@ -56,8 +56,28 @@ class UsuarioController {
         } catch (e: AuthenticationException) {
             throw NotAuthorizedException("Credenciales incorrectas")
         }
+
+        // Generamos el token
         val token = tokenService.generarToken(auth)
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapOf("token" to token))
+        // Obtenemos ya el DTO para devolverlo al cliente
+        val userDto = usuarioService.findByUsername(credentials.username)
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            mapOf(
+                "token" to token,
+                "user"  to userDto
+            )
+        )
+    }
+    // ----------------------------------------
+    // Obtener el perfil del usuario autenticado
+    // ----------------------------------------
+    @GetMapping("/me")
+    fun me(authentication: Authentication): ResponseEntity<UsuarioDTO> {
+        // authentication.name es el username del JWT
+        val username = authentication.name
+        val dto = usuarioService.findByUsername(username)
+        return ResponseEntity.ok(dto)
     }
 
     // ----------------------------------------
@@ -82,15 +102,17 @@ class UsuarioController {
     }
 
     // ----------------------------------------
-    // Obtener un usuario por username
+    // Obtener un usuario por username (ADMIN o dueño)
     // ----------------------------------------
     @GetMapping("/{username}")
     fun getByUsername(
         authentication: Authentication,
         @PathVariable username: String
     ): ResponseEntity<UsuarioDTO> {
-        if (!isOwnerOrAdmin(authentication, username)) {
-            throw ForbiddenException("Acceso denegado para ver este usuario.")
+        // autoriza sólo si es ADMIN o el propio usuario
+        val isAdmin = authentication.authorities.any { it.authority == "ROLE_ADMIN" }
+        if (authentication.name != username && !isAdmin) {
+            throw ForbiddenException("Acceso denegado para ver este usuario")
         }
         val dto = usuarioService.findByUsername(username)
         return ResponseEntity.ok(dto)

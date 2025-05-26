@@ -37,6 +37,7 @@ class SecurityConfig(private val rsaKeys: RSAKeysProperties): WebMvcConfigurer {
             .authorizeHttpRequests { auth -> auth
                 .requestMatchers("/usuarios/login").permitAll()
                 .requestMatchers("/usuarios/register").permitAll()
+                .requestMatchers("/usuarios/me").authenticated()
                 .requestMatchers("/usuarios/**").authenticated()
                 .requestMatchers("/categorias/**").authenticated()
                 .requestMatchers("/productos/**").authenticated()
