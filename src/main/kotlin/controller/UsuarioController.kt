@@ -80,6 +80,22 @@ class UsuarioController {
         return ResponseEntity.ok(dto)
     }
 
+    /**
+     * PUT /usuarios/me/wallet
+     * Actualiza únicamente el wallet del usuario autenticado.
+     */
+    @PutMapping("/me/wallet")
+    fun updateMyWallet(
+        authentication: Authentication,
+        @RequestBody body: Map<String, Int>
+    ): ResponseEntity<UsuarioDTO> {
+        val newWallet = body["wallet"]
+            ?: throw BadRequestException("Debes indicar el nuevo wallet en 'wallet'")
+        val username = authentication.name
+        val updated = usuarioService.updateWallet(username, newWallet)
+        return ResponseEntity.ok(updated)
+    }
+
     // ----------------------------------------
     // Helpers de permiso
     // ----------------------------------------

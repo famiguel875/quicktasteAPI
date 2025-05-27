@@ -124,9 +124,15 @@ class UsuarioService(
     // Actualizar solo el wallet (ADMIN)
     // ----------------------------------------
     fun updateWallet(username: String, newWallet: Int): UsuarioDTO {
-        requireAdmin()
+        // permitimos al dueño o a admin
+        val auth = SecurityContextHolder.getContext().authentication
+        val isAdmin = auth.authorities.any { it.authority == "ROLE_ADMIN" }
+        if (auth.name != username && !isAdmin) {
+            throw ForbiddenException("No tienes permiso para modificar este wallet")
+        }
         val u = usuarioRepository.findByUsername(username)
             .orElseThrow { NotFoundException("Usuario '$username' no encontrado") }
+        // creamos copia con wallet actualizado
         val updated = u.copy(wallet = newWallet)
         return usuarioRepository.save(updated).toDTO()
     }
