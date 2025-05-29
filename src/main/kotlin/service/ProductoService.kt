@@ -86,6 +86,13 @@ class ProductoService(
         productoRepository.deleteById(name)
     }
 
+    fun updateStockForOrder(name: String, newStock: Int): ProductoDTO {
+        val existing = productoRepository.findById(name)
+            .orElseThrow { NotFoundException("Producto '$name' no encontrado") }
+        val updated = existing.copy(stock = newStock)
+        return productoRepository.save(updated).toDTO()
+    }
+
     // -----------------------------------
     // Verificación de rol ADMIN interna
     // -----------------------------------

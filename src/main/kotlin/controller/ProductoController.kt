@@ -1,6 +1,7 @@
 package com.es.controller
 
 import com.es.dto.ProductoDTO
+import com.es.error.exception.BadRequestException
 import com.es.service.ProductoService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -49,5 +50,21 @@ class ProductoController {
     fun delete(@PathVariable name: String): ResponseEntity<Void> {
         productoService.delete(name)
         return ResponseEntity.noContent().build()
+    }
+
+    /**
+     * PUT /productos/{name}/stock
+     * Actualiza sólo el stock de un producto.
+     * Requiere un JWT válido (USER o ADMIN).
+     */
+    @PutMapping("/{name}/stock")
+    fun updateStockForOrder(
+        @PathVariable name: String,
+        @RequestBody body: Map<String, Int>
+    ): ResponseEntity<ProductoDTO> {
+        val newStock = body["stock"]
+            ?: throw BadRequestException("Debes indicar el nuevo stock en 'stock'")
+        val updated = productoService.updateStockForOrder(name, newStock)
+        return ResponseEntity.ok(updated)
     }
 }
