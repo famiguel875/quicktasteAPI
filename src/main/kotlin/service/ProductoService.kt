@@ -93,6 +93,14 @@ class ProductoService(
         return productoRepository.save(updated).toDTO()
     }
 
+    fun updatePrice(name: String, newPrice: Double): ProductoDTO {
+        requireAdmin()  // Verifica que quien solicita tenga ROLE_ADMIN
+        val existing = productoRepository.findById(name)
+            .orElseThrow { NotFoundException("Producto '$name' no encontrado") }
+        val updated = existing.copy(price = newPrice)
+        return productoRepository.save(updated).toDTO()
+    }
+
     // -----------------------------------
     // Verificación de rol ADMIN interna
     // -----------------------------------

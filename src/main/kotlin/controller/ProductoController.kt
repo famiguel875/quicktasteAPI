@@ -67,4 +67,15 @@ class ProductoController {
         val updated = productoService.updateStockForOrder(name, newStock)
         return ResponseEntity.ok(updated)
     }
+
+    @PutMapping("/{name}/price")
+    fun updatePrice(
+        @PathVariable name: String,
+        @RequestBody body: Map<String, Double>
+    ): ResponseEntity<ProductoDTO> {
+        val newPrice = body["price"]
+            ?: throw BadRequestException("Debes indicar el nuevo precio en 'price'")
+        val updated = productoService.updatePrice(name, newPrice)
+        return ResponseEntity.ok(updated)
+    }
 }
