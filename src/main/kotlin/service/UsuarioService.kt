@@ -22,13 +22,13 @@ class UsuarioService(
 ) : UserDetailsService {
 
     // ----------------------------------------
-    // Para Spring Security (JWT)
+    // For Spring Security (JWT)
     // ----------------------------------------
     override fun loadUserByUsername(username: String?): UserDetails {
         val userNameNonNull = username
-            ?: throw NotFoundException("El username no puede ser nulo")
+            ?: throw NotFoundException("Username cannot be null")
         val usuario = usuarioRepository.findByUsername(userNameNonNull)
-            .orElseThrow { NotFoundException("Usuario '$userNameNonNull' no encontrado") }
+            .orElseThrow { NotFoundException("User '$userNameNonNull' not found") }
         val rolesArray = usuario.roles
             ?.split(",")
             ?.toTypedArray()
@@ -41,14 +41,14 @@ class UsuarioService(
     }
 
     // ----------------------------------------
-    // Registro abierto
+    // Open registration
     // ----------------------------------------
     fun register(dto: UsuarioRegisterDTO): UsuarioDTO {
         if (dto.password != dto.passwordRepeat) {
-            throw BadRequestException("Las contraseñas no coinciden")
+            throw BadRequestException("Passwords do not match")
         }
         if (usuarioRepository.findByUsername(dto.username).isPresent) {
-            throw BadRequestException("El username '${dto.username}' ya existe")
+            throw BadRequestException("Username '${dto.username}' already exists")
         }
         val entity = Usuario(
             email    = dto.email,
@@ -63,7 +63,7 @@ class UsuarioService(
     }
 
     // ----------------------------------------
-    // Listar todos (ADMIN)
+    // List all (ADMIN)
     // ----------------------------------------
     fun findAll(): List<UsuarioDTO> {
         requireAdmin()
@@ -71,28 +71,28 @@ class UsuarioService(
     }
 
     // ----------------------------------------
-    // Buscar por username (auth’d)
+    // Find by username (authenticated)
     // ----------------------------------------
     fun findByUsername(username: String): UsuarioDTO {
         val u = usuarioRepository.findByUsername(username)
-            .orElseThrow { NotFoundException("Usuario '$username' no encontrado") }
+            .orElseThrow { NotFoundException("User '$username' not found") }
         return u.toDTO()
     }
 
     // ----------------------------------------
-    // Actualizar usuario (ADMIN o dueño)
+    // Update user (ADMIN or owner)
     // ----------------------------------------
     fun update(username: String, dto: UsuarioRegisterDTO): UsuarioDTO {
-        // solo admin o el mismo username puede actualizar
+        // only admin or the user themselves can update
         val auth = SecurityContextHolder.getContext().authentication
         if (auth.name != username && auth.authorities.none { it.authority == "ROLE_ADMIN" }) {
-            throw ForbiddenException("No tienes permiso para actualizar este usuario")
+            throw ForbiddenException("You do not have permission to update this user")
         }
         if (username != dto.username) {
-            throw BadRequestException("El username no puede modificarse")
+            throw BadRequestException("Username cannot be modified")
         }
         val existing = usuarioRepository.findByUsername(username)
-            .orElseThrow { NotFoundException("Usuario '$username' no encontrado") }
+            .orElseThrow { NotFoundException("User '$username' not found") }
 
         val newPass = if (dto.password.isNotBlank()) {
             passwordEncoder.encode(dto.password)
@@ -110,46 +110,49 @@ class UsuarioService(
     }
 
     // ----------------------------------------
-    // Borrar usuario (ADMIN)
+    // Delete user (ADMIN or self)
     // ----------------------------------------
     fun delete(username: String) {
-        requireAdmin()
+        val auth = SecurityContextHolder.getContext().authentication
+        val isAdmin = auth.authorities.any { it.authority == "ROLE_ADMIN" }
+        // Allow if ADMIN or if the user is deleting themselves
+        if (auth.name != username && !isAdmin) {
+            throw ForbiddenException("You do not have permission to delete this user")
+        }
         if (!usuarioRepository.findByUsername(username).isPresent) {
-            throw NotFoundException("Usuario '$username' no encontrado")
+            throw NotFoundException("User '$username' not found")
         }
         usuarioRepository.deleteByUsername(username)
     }
 
     // ----------------------------------------
-    // Actualizar solo el wallet (ADMIN)
+    // Update only the wallet (ADMIN or owner)
     // ----------------------------------------
     fun updateWallet(username: String, newWallet: Int): UsuarioDTO {
-        // permitimos al dueño o a admin
         val auth = SecurityContextHolder.getContext().authentication
         val isAdmin = auth.authorities.any { it.authority == "ROLE_ADMIN" }
         if (auth.name != username && !isAdmin) {
-            throw ForbiddenException("No tienes permiso para modificar este wallet")
+            throw ForbiddenException("You do not have permission to modify this wallet")
         }
         val u = usuarioRepository.findByUsername(username)
-            .orElseThrow { NotFoundException("Usuario '$username' no encontrado") }
-        // creamos copia con wallet actualizado
+            .orElseThrow { NotFoundException("User '$username' not found") }
         val updated = u.copy(wallet = newWallet)
         return usuarioRepository.save(updated).toDTO()
     }
 
     // ----------------------------------------
-    // Verificación interna ADMIN
+    // Internal ADMIN role verification
     // ----------------------------------------
     private fun requireAdmin() {
         val auth = SecurityContextHolder.getContext().authentication
         val isAdmin = auth.authorities.any { it.authority == "ROLE_ADMIN" }
         if (!isAdmin) {
-            throw ForbiddenException("Solo administradores pueden realizar esta operación")
+            throw ForbiddenException("Only administrators can perform this operation")
         }
     }
 
     // ----------------------------------------
-    // Mapper Entidad → DTO
+    // Entity → DTO mapper
     // ----------------------------------------
     private fun Usuario.toDTO(): UsuarioDTO = UsuarioDTO(
         email    = this.email,
@@ -160,10 +163,3 @@ class UsuarioService(
         wallet   = this.wallet
     )
 }
-
-
-
-
-
-
-

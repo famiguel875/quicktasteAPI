@@ -16,30 +16,30 @@ class CategoriaService(
 ) {
 
     /**
-     * Devuelve todas las categorías.
-     * Cualquiera autenticado puede acceder.
+     * Returns all categories.
+     * Any authenticated user can access.
      */
     fun findAll(): List<CategoriaDTO> =
         categoriaRepository.findAll().map { it.toDTO() }
 
     /**
-     * Busca una categoría por su nombre.
-     * Cualquiera autenticado puede acceder.
+     * Finds a category by its name.
+     * Any authenticated user can access.
      */
     fun findByName(name: String): CategoriaDTO {
         val categoria = categoriaRepository.findById(name)
-            .orElseThrow { NotFoundException("Categoría '$name' no encontrada") }
+            .orElseThrow { NotFoundException("Category '$name' not found") }
         return categoria.toDTO()
     }
 
     /**
-     * Crea una nueva categoría.
-     * Solo ADMIN puede ejecutarlo.
+     * Creates a new category.
+     * Only ADMIN can execute.
      */
     fun create(dto: CategoriaDTO): CategoriaDTO {
         requireAdmin()
         if (categoriaRepository.existsById(dto.name)) {
-            throw BadRequestException("Ya existe la categoría '${dto.name}'")
+            throw BadRequestException("Category '${dto.name}' already exists")
         }
         val entity = dto.toEntity()
         val saved = categoriaRepository.save(entity)
@@ -47,46 +47,46 @@ class CategoriaService(
     }
 
     /**
-     * Actualiza la imagen de una categoría existente.
-     * No permite cambiar el nombre (PK).
-     * Solo ADMIN puede ejecutarlo.
+     * Updates the image of an existing category.
+     * Does not allow changing the name (PK).
+     * Only ADMIN can execute.
      */
     fun update(name: String, dto: CategoriaDTO): CategoriaDTO {
         requireAdmin()
         if (name != dto.name) {
-            throw BadRequestException("El nombre de la categoría no puede modificarse")
+            throw BadRequestException("Category name cannot be changed")
         }
         val existing = categoriaRepository.findById(name)
-            .orElseThrow { NotFoundException("Categoría '$name' no encontrada") }
+            .orElseThrow { NotFoundException("Category '$name' not found") }
         val updated = existing.copy(image = dto.image)
         return categoriaRepository.save(updated).toDTO()
     }
 
     /**
-     * Elimina una categoría por su nombre.
-     * Solo ADMIN puede ejecutarlo.
+     * Deletes a category by its name.
+     * Only ADMIN can execute.
      */
     fun delete(name: String) {
         requireAdmin()
         if (!categoriaRepository.existsById(name)) {
-            throw NotFoundException("Categoría '$name' no encontrada")
+            throw NotFoundException("Category '$name' not found")
         }
         categoriaRepository.deleteById(name)
     }
 
     // -----------------------------------
-    // Verificación de rol ADMIN interna
+    // Internal ADMIN role check
     // -----------------------------------
     private fun requireAdmin() {
         val auth = SecurityContextHolder.getContext().authentication
         val isAdmin = auth.authorities.any { it.authority == "ROLE_ADMIN" }
         if (!isAdmin) {
-            throw ForbiddenException("Solo administradores pueden realizar esta operación")
+            throw ForbiddenException("Only administrators can perform this operation")
         }
     }
 
     // ----------------------------
-    // Mappers internos al service
+    // Internal mappers in service
     // ----------------------------
     private fun Categoria.toDTO(): CategoriaDTO =
         CategoriaDTO(
@@ -100,4 +100,3 @@ class CategoriaService(
             image = this.image
         )
 }
-

@@ -31,7 +31,7 @@ class UsuarioController {
     private lateinit var usuarioService: UsuarioService
 
     // ----------------------------------------
-    // Registro de usuario
+    // User registration
     // ----------------------------------------
     @PostMapping("/register")
     fun register(
@@ -42,7 +42,7 @@ class UsuarioController {
     }
 
     // ----------------------------------------
-    // Login de usuario → devuelve JWT
+    // User login → returns JWT
     // ----------------------------------------
     @PostMapping("/login")
     fun login(@RequestBody credentials: LoginUsuarioDTO): ResponseEntity<Any> {
@@ -54,12 +54,12 @@ class UsuarioController {
                 )
             )
         } catch (e: AuthenticationException) {
-            throw NotAuthorizedException("Credenciales incorrectas")
+            throw ForbiddenException("Invalid credentials")
         }
 
-        // Generamos el token
+        // Generate the token
         val token = tokenService.generarToken(auth)
-        // Obtenemos ya el DTO para devolverlo al cliente
+        // Retrieve the DTO to return to the client
         val userDto = usuarioService.findByUsername(credentials.username)
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -69,12 +69,13 @@ class UsuarioController {
             )
         )
     }
+
     // ----------------------------------------
-    // Obtener el perfil del usuario autenticado
+    // Get the profile of the authenticated user
     // ----------------------------------------
     @GetMapping("/me")
     fun me(authentication: Authentication): ResponseEntity<UsuarioDTO> {
-        // authentication.name es el username del JWT
+        // authentication.name is the username from the JWT
         val username = authentication.name
         val dto = usuarioService.findByUsername(username)
         return ResponseEntity.ok(dto)
@@ -82,7 +83,7 @@ class UsuarioController {
 
     /**
      * PUT /usuarios/me/wallet
-     * Actualiza únicamente el wallet del usuario autenticado.
+     * Updates only the wallet of the authenticated user.
      */
     @PutMapping("/me/wallet")
     fun updateMyWallet(
@@ -90,14 +91,14 @@ class UsuarioController {
         @RequestBody body: Map<String, Int>
     ): ResponseEntity<UsuarioDTO> {
         val newWallet = body["wallet"]
-            ?: throw BadRequestException("Debes indicar el nuevo wallet en 'wallet'")
+            ?: throw BadRequestException("You must provide the new wallet amount under 'wallet'")
         val username = authentication.name
         val updated = usuarioService.updateWallet(username, newWallet)
         return ResponseEntity.ok(updated)
     }
 
     // ----------------------------------------
-    // Helpers de permiso
+    // Permission helpers
     // ----------------------------------------
     private fun isAdmin(auth: Authentication): Boolean =
         auth.authorities.any { it.authority == "ROLE_ADMIN" }
@@ -106,36 +107,34 @@ class UsuarioController {
         auth.name == username || isAdmin(auth)
 
     // ----------------------------------------
-    // Obtener todos los usuarios (solo ADMIN)
+    // Get all users (only ADMIN)
     // ----------------------------------------
     @GetMapping
     fun getAll(authentication: Authentication): ResponseEntity<List<UsuarioDTO>> {
         if (!isAdmin(authentication)) {
-            throw ForbiddenException("Acceso denegado para ver todos los usuarios.")
+            throw ForbiddenException("Access denied to view all users.")
         }
         val list = usuarioService.findAll()
         return ResponseEntity.ok(list)
     }
 
     // ----------------------------------------
-    // Obtener un usuario por username (ADMIN o dueño)
+    // Get a user by username (ADMIN or owner)
     // ----------------------------------------
     @GetMapping("/{username}")
     fun getByUsername(
         authentication: Authentication,
         @PathVariable username: String
     ): ResponseEntity<UsuarioDTO> {
-        // autoriza sólo si es ADMIN o el propio usuario
-        val isAdmin = authentication.authorities.any { it.authority == "ROLE_ADMIN" }
-        if (authentication.name != username && !isAdmin) {
-            throw ForbiddenException("Acceso denegado para ver este usuario")
+        if (!isOwnerOrAdmin(authentication, username)) {
+            throw ForbiddenException("Access denied to view this user.")
         }
         val dto = usuarioService.findByUsername(username)
         return ResponseEntity.ok(dto)
     }
 
     // ----------------------------------------
-    // Actualizar un usuario
+    // Update a user
     // ----------------------------------------
     @PutMapping("/{username}")
     fun update(
@@ -144,22 +143,23 @@ class UsuarioController {
         @RequestBody dto: UsuarioRegisterDTO
     ): ResponseEntity<UsuarioDTO> {
         if (!isOwnerOrAdmin(authentication, username)) {
-            throw ForbiddenException("Acceso denegado para actualizar este usuario.")
+            throw ForbiddenException("Access denied to update this user.")
         }
         val updated = usuarioService.update(username, dto)
         return ResponseEntity.ok(updated)
     }
 
     // ----------------------------------------
-    // Eliminar un usuario
+    // Delete a user
     // ----------------------------------------
     @DeleteMapping("/{username}")
     fun delete(
         authentication: Authentication,
         @PathVariable username: String
     ): ResponseEntity<Void> {
-        if (!isAdmin(authentication)) {
-            throw ForbiddenException("Acceso denegado para eliminar este usuario.")
+        // Allow deletion by ADMIN or by the user themselves
+        if (!(isOwnerOrAdmin(authentication, username))) {
+            throw ForbiddenException("Access denied to delete this user.")
         }
         usuarioService.delete(username)
         return ResponseEntity.noContent().build()
@@ -167,7 +167,7 @@ class UsuarioController {
 
     /**
      * PUT /usuarios/{username}/wallet
-     * Actualiza únicamente el saldo (wallet) del usuario.
+     * Updates only the wallet of the specified user.
      */
     @PutMapping("/{username}/wallet")
     fun updateWallet(
@@ -175,12 +175,8 @@ class UsuarioController {
         @RequestBody body: Map<String, Int>
     ): ResponseEntity<UsuarioDTO> {
         val newWallet = body["wallet"]
-            ?: throw BadRequestException("Debe proporcionarse el nuevo saldo bajo la clave 'wallet'")
+            ?: throw BadRequestException("You must provide the new wallet amount under 'wallet'")
         val updated = usuarioService.updateWallet(username, newWallet)
         return ResponseEntity.ok(updated)
     }
 }
-
-
-
-

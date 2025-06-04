@@ -16,7 +16,7 @@ class CategoriaController {
 
     /**
      * GET /categorias
-     * Devuelve todas las categorías.
+     * Returns all categories.
      */
     @GetMapping
     fun getAll(): ResponseEntity<List<CategoriaDTO>> {
@@ -26,7 +26,7 @@ class CategoriaController {
 
     /**
      * GET /categorias/{name}
-     * Devuelve una categoría por nombre.
+     * Returns a category by name.
      */
     @GetMapping("/{name}")
     fun getByName(@PathVariable name: String): ResponseEntity<CategoriaDTO> {
@@ -36,7 +36,7 @@ class CategoriaController {
 
     /**
      * POST /categorias
-     * Crea una nueva categoría. Solo ADMIN.
+     * Creates a new category. Only ADMIN.
      */
     @PostMapping
     fun create(@RequestBody dto: CategoriaDTO): ResponseEntity<CategoriaDTO> {
@@ -46,7 +46,7 @@ class CategoriaController {
 
     /**
      * PUT /categorias/{name}
-     * Actualiza la imagen de una categoría existente. Solo ADMIN.
+     * Updates the image of an existing category. Only ADMIN.
      */
     @PutMapping("/{name}")
     fun update(
@@ -59,7 +59,7 @@ class CategoriaController {
 
     /**
      * DELETE /categorias/{name}
-     * Elimina una categoría por su nombre. Solo ADMIN.
+     * Deletes a category by name. Only ADMIN.
      */
     @DeleteMapping("/{name}")
     fun delete(@PathVariable name: String): ResponseEntity<Void> {

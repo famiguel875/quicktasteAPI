@@ -13,22 +13,22 @@ class PedidoService(
     @Autowired private val pedidoRepository: PedidoRepository
 ) {
 
-    /** ADMIN: todos los pedidos */
+    /** ADMIN: all orders */
     fun findAll(): List<PedidoDTO> =
         pedidoRepository.findAll().map { it.toDTO() }
 
-    /** Cualquier usuario: su propio pedido */
+    /** Any user: their own order */
     fun findById(id: String): PedidoDTO {
         val p = pedidoRepository.findById(id)
-            .orElseThrow { NotFoundException("Pedido '$id' no encontrado") }
+            .orElseThrow { NotFoundException("Order '$id' not found") }
         return p.toDTO()
     }
 
-    /** ADMIN o propietario: pedidos de un usuario */
+    /** ADMIN or owner: orders of a user */
     fun findByUserEmail(userEmail: String): List<PedidoDTO> =
         pedidoRepository.findByUserEmail(userEmail).map { it.toDTO() }
 
-    /** Crea un pedido, ignora dto.id para que Mongo genere uno */
+    /** Creates an order, ignoring dto.id so Mongo generates one */
     fun create(dto: PedidoDTO): PedidoDTO {
         val entity = Pedido(
             id         = null,
@@ -42,11 +42,11 @@ class PedidoService(
         return saved.toDTO()
     }
 
-    /** Actualiza un pedido existente (no cambia el id) */
+    /** Updates an existing order (does not change the id) */
     fun update(id: String, dto: PedidoDTO): PedidoDTO {
-        if (id != dto.id) throw BadRequestException("El ID no puede modificarse")
+        if (id != dto.id) throw BadRequestException("ID cannot be modified")
         val existing = pedidoRepository.findById(id)
-            .orElseThrow { NotFoundException("Pedido '$id' no encontrado") }
+            .orElseThrow { NotFoundException("Order '$id' not found") }
         val updated = existing.copy(
             userEmail = dto.userEmail,
             productos = dto.productos,
@@ -57,16 +57,16 @@ class PedidoService(
         return pedidoRepository.save(updated).toDTO()
     }
 
-    /** Elimina un pedido por su ID */
+    /** Deletes an order by its ID */
     fun delete(id: String) {
         if (!pedidoRepository.existsById(id)) {
-            throw NotFoundException("Pedido '$id' no encontrado")
+            throw NotFoundException("Order '$id' not found")
         }
         pedidoRepository.deleteById(id)
     }
 
     // ——————————————————————————————
-    // Mapper interno
+    // Internal mapper
     // ——————————————————————————————
     private fun Pedido.toDTO(): PedidoDTO =
         PedidoDTO(
@@ -78,4 +78,3 @@ class PedidoService(
             direccion  = this.direccion
         )
 }
-

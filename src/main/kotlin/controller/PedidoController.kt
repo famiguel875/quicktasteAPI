@@ -21,8 +21,8 @@ class PedidoController {
 
     /**
      * GET /pedidos
-     * - ADMIN: todos los pedidos.
-     * - USER: solo sus propios pedidos.
+     * - ADMIN: all orders.
+     * - USER: only their own orders.
      */
     @GetMapping
     fun getAll(authentication: Authentication): ResponseEntity<List<PedidoDTO>> {
@@ -36,8 +36,8 @@ class PedidoController {
 
     /**
      * GET /pedidos/{id}
-     * - ADMIN: cualquier pedido.
-     * - USER: solo si es el suyo.
+     * - ADMIN: any order.
+     * - USER: only if it belongs to them.
      */
     @GetMapping("/{id}")
     fun getById(
@@ -46,14 +46,14 @@ class PedidoController {
     ): ResponseEntity<PedidoDTO> {
         val dto = pedidoService.findById(id)
         if (!isAdmin(authentication) && dto.userEmail != authentication.name) {
-            throw ForbiddenException("No tienes permiso para ver este pedido")
+            throw ForbiddenException("You do not have permission to view this order")
         }
         return ResponseEntity.ok(dto)
     }
 
     /**
      * POST /pedidos
-     * Crea un pedido; for USER, el email sale del token.
+     * Creates an order; for USER, email is taken from token.
      */
     @PostMapping
     fun create(
@@ -68,7 +68,7 @@ class PedidoController {
 
     /**
      * PUT /pedidos/{id}
-     * Actualiza un pedido; solo ADMIN o propietario.
+     * Updates an order; only ADMIN or owner.
      */
     @PutMapping("/{id}")
     fun update(
@@ -78,7 +78,7 @@ class PedidoController {
     ): ResponseEntity<PedidoDTO> {
         val existing = pedidoService.findById(id)
         if (!isAdmin(authentication) && existing.userEmail != authentication.name) {
-            throw ForbiddenException("No tienes permiso para actualizar este pedido")
+            throw ForbiddenException("You do not have permission to update this order")
         }
         val updated = pedidoService.update(id, dto)
         return ResponseEntity.ok(updated)
@@ -86,7 +86,7 @@ class PedidoController {
 
     /**
      * DELETE /pedidos/{id}
-     * Elimina un pedido; solo ADMIN o propietario.
+     * Deletes an order; only ADMIN or owner.
      */
     @DeleteMapping("/{id}")
     fun delete(
@@ -95,7 +95,7 @@ class PedidoController {
     ): ResponseEntity<Void> {
         val existing = pedidoService.findById(id)
         if (!isAdmin(authentication) && existing.userEmail != authentication.name) {
-            throw ForbiddenException("No tienes permiso para eliminar este pedido")
+            throw ForbiddenException("You do not have permission to delete this order")
         }
         pedidoService.delete(id)
         return ResponseEntity.noContent().build()

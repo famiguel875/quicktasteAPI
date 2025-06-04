@@ -15,29 +15,29 @@ class ProductoController {
     @Autowired
     private lateinit var productoService: ProductoService
 
-    /** GET /productos — todos los productos */
+    /** GET /productos — all products */
     @GetMapping
     fun getAll(): ResponseEntity<List<ProductoDTO>> =
         ResponseEntity.ok(productoService.findAll())
 
-    /** GET /productos/{name} — busca uno por PK */
+    /** GET /productos/{name} — find one by PK */
     @GetMapping("/{name}")
     fun getByName(@PathVariable name: String): ResponseEntity<ProductoDTO> =
         ResponseEntity.ok(productoService.findByName(name))
 
-    /** GET /productos/categoria/{category} — filtra por categoría */
+    /** GET /productos/categoria/{category} — filter by category */
     @GetMapping("/categoria/{category}")
     fun getByCategory(@PathVariable category: String): ResponseEntity<List<ProductoDTO>> =
         ResponseEntity.ok(productoService.findByCategory(category))
 
-    /** POST /productos — crea uno nuevo (solo ADMIN) */
+    /** POST /productos — create new (only ADMIN) */
     @PostMapping
     fun create(@RequestBody dto: ProductoDTO): ResponseEntity<ProductoDTO> {
         val created = productoService.create(dto)
         return ResponseEntity.status(HttpStatus.CREATED).body(created)
     }
 
-    /** PUT /productos/{name} — actualiza (solo ADMIN) */
+    /** PUT /productos/{name} — update (only ADMIN) */
     @PutMapping("/{name}")
     fun update(
         @PathVariable name: String,
@@ -45,7 +45,7 @@ class ProductoController {
     ): ResponseEntity<ProductoDTO> =
         ResponseEntity.ok(productoService.update(name, dto))
 
-    /** DELETE /productos/{name} — elimina (solo ADMIN) */
+    /** DELETE /productos/{name} — delete (only ADMIN) */
     @DeleteMapping("/{name}")
     fun delete(@PathVariable name: String): ResponseEntity<Void> {
         productoService.delete(name)
@@ -54,8 +54,8 @@ class ProductoController {
 
     /**
      * PUT /productos/{name}/stock
-     * Actualiza sólo el stock de un producto.
-     * Requiere un JWT válido (USER o ADMIN).
+     * Updates only product stock.
+     * Requires a valid JWT (USER or ADMIN).
      */
     @PutMapping("/{name}/stock")
     fun updateStockForOrder(
@@ -63,19 +63,40 @@ class ProductoController {
         @RequestBody body: Map<String, Int>
     ): ResponseEntity<ProductoDTO> {
         val newStock = body["stock"]
-            ?: throw BadRequestException("Debes indicar el nuevo stock en 'stock'")
+            ?: throw BadRequestException("You must specify the new stock in 'stock'")
         val updated = productoService.updateStockForOrder(name, newStock)
         return ResponseEntity.ok(updated)
     }
 
+    /**
+     * PUT /productos/{name}/price
+     * Updates only product price.
+     * Requires a valid JWT (USER or ADMIN).
+     */
     @PutMapping("/{name}/price")
     fun updatePrice(
         @PathVariable name: String,
         @RequestBody body: Map<String, Double>
     ): ResponseEntity<ProductoDTO> {
         val newPrice = body["price"]
-            ?: throw BadRequestException("Debes indicar el nuevo precio en 'price'")
+            ?: throw BadRequestException("You must specify the new price in 'price'")
         val updated = productoService.updatePrice(name, newPrice)
+        return ResponseEntity.ok(updated)
+    }
+
+    /**
+     * PUT /productos/{name}/image
+     * Updates only product image URL.
+     * Requires ADMIN.
+     */
+    @PutMapping("/{name}/image")
+    fun updateImage(
+        @PathVariable name: String,
+        @RequestBody body: Map<String, String>
+    ): ResponseEntity<ProductoDTO> {
+        val newImage = body["image"]
+            ?: throw BadRequestException("You must specify the new image URL in 'image'")
+        val updated = productoService.updateImage(name, newImage)
         return ResponseEntity.ok(updated)
     }
 }

@@ -16,54 +16,54 @@ class ProductoService(
 ) {
 
     /**
-     * Devuelve todos los productos.
-     * Cualquiera autenticado puede acceder.
+     * Returns all products.
+     * Any authenticated user can access.
      */
     fun findAll(): List<ProductoDTO> =
         productoRepository.findAll().map { it.toDTO() }
 
     /**
-     * Busca un producto por su nombre (PK).
-     * Cualquiera autenticado puede acceder.
+     * Finds a product by its name (PK).
+     * Any authenticated user can access.
      */
     fun findByName(name: String): ProductoDTO {
         val producto = productoRepository.findById(name)
-            .orElseThrow { NotFoundException("Producto '$name' no encontrado") }
+            .orElseThrow { NotFoundException("Product '$name' not found") }
         return producto.toDTO()
     }
 
     /**
-     * Lista todos los productos de una categoría dada.
-     * Cualquiera autenticado puede acceder.
+     * Lists all products in a given category.
+     * Any authenticated user can access.
      */
     fun findByCategory(category: String): List<ProductoDTO> =
         productoRepository.findByCategory(category).map { it.toDTO() }
 
     /**
-     * Crea un nuevo producto.
-     * Solo ADMIN puede hacerlo.
+     * Creates a new product.
+     * Only ADMIN can execute.
      */
     fun create(dto: ProductoDTO): ProductoDTO {
         requireAdmin()
         if (productoRepository.existsById(dto.name)) {
-            throw BadRequestException("Ya existe un producto con nombre '${dto.name}'")
+            throw BadRequestException("A product with name '${dto.name}' already exists")
         }
         val entity = dto.toEntity()
         return productoRepository.save(entity).toDTO()
     }
 
     /**
-     * Actualiza un producto existente.
-     * No permite cambiar la PK name.
-     * Solo ADMIN puede hacerlo.
+     * Updates an existing product.
+     * Does not allow changing the PK name.
+     * Only ADMIN can execute.
      */
     fun update(name: String, dto: ProductoDTO): ProductoDTO {
         requireAdmin()
         if (name != dto.name) {
-            throw BadRequestException("El nombre del producto no puede modificarse")
+            throw BadRequestException("Product name cannot be changed")
         }
         val existing = productoRepository.findById(name)
-            .orElseThrow { NotFoundException("Producto '$name' no encontrado") }
+            .orElseThrow { NotFoundException("Product '$name' not found") }
         val updated = existing.copy(
             category    = dto.category,
             stock       = dto.stock,
@@ -75,45 +75,58 @@ class ProductoService(
     }
 
     /**
-     * Elimina un producto por su nombre.
-     * Solo ADMIN puede hacerlo.
+     * Deletes a product by its name.
+     * Only ADMIN can execute.
      */
     fun delete(name: String) {
         requireAdmin()
         if (!productoRepository.existsById(name)) {
-            throw NotFoundException("Producto '$name' no encontrado")
+            throw NotFoundException("Product '$name' not found")
         }
         productoRepository.deleteById(name)
     }
 
     fun updateStockForOrder(name: String, newStock: Int): ProductoDTO {
         val existing = productoRepository.findById(name)
-            .orElseThrow { NotFoundException("Producto '$name' no encontrado") }
+            .orElseThrow { NotFoundException("Product '$name' not found") }
         val updated = existing.copy(stock = newStock)
         return productoRepository.save(updated).toDTO()
     }
 
     fun updatePrice(name: String, newPrice: Double): ProductoDTO {
-        requireAdmin()  // Verifica que quien solicita tenga ROLE_ADMIN
+        requireAdmin()  // Verifies that the caller has ROLE_ADMIN
         val existing = productoRepository.findById(name)
-            .orElseThrow { NotFoundException("Producto '$name' no encontrado") }
+            .orElseThrow { NotFoundException("Product '$name' not found") }
         val updated = existing.copy(price = newPrice)
         return productoRepository.save(updated).toDTO()
     }
 
+    /**
+     * Updates only the image of a product.
+     * Does not allow changing the name (PK).
+     * Only ADMIN can execute.
+     */
+    fun updateImage(name: String, newImage: String): ProductoDTO {
+        requireAdmin()
+        val existing = productoRepository.findById(name)
+            .orElseThrow { NotFoundException("Product '$name' not found") }
+        val updated = existing.copy(image = newImage)
+        return productoRepository.save(updated).toDTO()
+    }
+
     // -----------------------------------
-    // Verificación de rol ADMIN interna
+    // Internal ADMIN role verification
     // -----------------------------------
     private fun requireAdmin() {
         val auth = SecurityContextHolder.getContext().authentication
         val isAdmin = auth.authorities.any { it.authority == "ROLE_ADMIN" }
         if (!isAdmin) {
-            throw ForbiddenException("Solo administradores pueden realizar esta operación")
+            throw ForbiddenException("Only administrators can perform this operation")
         }
     }
 
     // ------------------------------------
-    // Mappers internos (dentro del service)
+    // Internal mappers (within the service)
     // ------------------------------------
     private fun Producto.toDTO(): ProductoDTO =
         ProductoDTO(
