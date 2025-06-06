@@ -7,5 +7,5 @@ data class ProductoDTO(
     val description: String,
     val price: Double,
     val image: String?,      // incluimos imagen en el DTO
-    val allowedEmails: List<String>?
+    val allowedEmails: List<String>? = null
 )
