@@ -3,9 +3,11 @@ package com.es.controller
 import com.es.dto.ProductoDTO
 import com.es.error.exception.BadRequestException
 import com.es.service.ProductoService
+import com.es.service.UsuarioService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -14,6 +16,10 @@ class ProductoController {
 
     @Autowired
     private lateinit var productoService: ProductoService
+
+    // Inyectamos UsuarioService para poder obtener el email del usuario autenticado
+    @Autowired
+    private lateinit var usuarioService: UsuarioService
 
     /** GET /productos — all products */
     @GetMapping
@@ -98,5 +104,25 @@ class ProductoController {
             ?: throw BadRequestException("You must specify the new image URL in 'image'")
         val updated = productoService.updateImage(name, newImage)
         return ResponseEntity.ok(updated)
+    }
+
+    /**
+     * --- NUEVO ENDPOINT ---
+     * GET /productos/allowed
+     * Devuelve solo los productos permitidos para el usuario autenticado.
+     *
+     * - Sacamos el username (al iniciar sesión guardaste el username en JWT).
+     * - Luego pedimos al UsuarioService el UsuarioDTO correspondiente para obtener su email.
+     * - Finalmente llamamos a productoService.findAllowedForUser(email).
+     */
+    @GetMapping("/allowed")
+    fun getAllowedForCurrentUser(authentication: Authentication): ResponseEntity<List<ProductoDTO>> {
+        // authentication.name es el username (no el email). Para obtener el email real:
+        val username = authentication.name
+        val usuarioDto = usuarioService.findByUsername(username)
+        val email = usuarioDto.email
+
+        val listaFiltrada = productoService.findAllowedForUser(email)
+        return ResponseEntity.ok(listaFiltrada)
     }
 }

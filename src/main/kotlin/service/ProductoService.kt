@@ -126,6 +126,29 @@ class ProductoService(
         }
     }
 
+    /**
+     * Devuelve todos los productos “permitidos” para un email dado.
+     * Se consideran permitidos aquellos cuyo allowedEmails sea null o vacío,
+     * o bien aquellos cuya lista contenga el email (ignorando mayúsculas/minúsculas).
+     */
+    fun findAllowedForUser(email: String): List<ProductoDTO> {
+        // Recuperamos todos
+        val todos: List<ProductoDTO> = productoRepository.findAll().map { it.toDTO() }
+
+        // Filtramos:
+        return todos.filter { dto ->
+            val lista = dto.allowedEmails
+            if (lista.isNullOrEmpty()) {
+                // Si no tiene lista, es “público”
+                true
+            } else {
+                // Normalizamos cada email de la lista y comparamos ignorando case
+                lista.map { it.trim().lowercase() }
+                    .contains(email.trim().lowercase())
+            }
+        }
+    }
+
     // ------------------------------------
     // Internal mappers (within the service)
     // ------------------------------------
