@@ -6,5 +6,6 @@ data class ProductoDTO(
     val stock: Int,
     val description: String,
     val price: Double,
-    val image: String?      // incluimos imagen en el DTO
+    val image: String?,      // incluimos imagen en el DTO
+    val allowedEmails: List<String>?
 )

@@ -10,5 +10,6 @@ data class Producto(
     val stock: Int,
     val description: String,
     val price: Double,
-    val image: String?       // ruta o URL de la imagen
+    val image: String?,  // ruta o URL de la imagen
+    val allowedEmails: List<String>? = null
 )

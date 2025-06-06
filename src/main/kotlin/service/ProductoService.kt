@@ -69,7 +69,8 @@ class ProductoService(
             stock       = dto.stock,
             description = dto.description,
             price       = dto.price,
-            image       = dto.image
+            image       = dto.image,
+            allowedEmails = dto.allowedEmails
         )
         return productoRepository.save(updated).toDTO()
     }
@@ -135,7 +136,8 @@ class ProductoService(
             stock       = this.stock,
             description = this.description,
             price       = this.price,
-            image       = this.image
+            image       = this.image,
+            allowedEmails = this.allowedEmails
         )
 
     private fun ProductoDTO.toEntity(): Producto =
@@ -145,6 +147,7 @@ class ProductoService(
             stock       = this.stock,
             description = this.description,
             price       = this.price,
-            image       = this.image
+            image       = this.image,
+            allowedEmails = this.allowedEmails
         )
 }
