@@ -1,7 +1,9 @@
 package com.es.controller
 
 import com.es.dto.PedidoDTO
+import com.es.error.exception.BadRequestException
 import com.es.error.exception.ForbiddenException
+import com.es.model.PedidoStatus
 import com.es.service.PedidoService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
@@ -66,10 +68,6 @@ class PedidoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created)
     }
 
-    /**
-     * PUT /pedidos/{id}
-     * Updates an order; only ADMIN or owner.
-     */
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: String,
@@ -78,9 +76,20 @@ class PedidoController {
     ): ResponseEntity<PedidoDTO> {
         val existing = pedidoService.findById(id)
         if (!isAdmin(authentication) && existing.userEmail != authentication.name) {
-            throw ForbiddenException("You do not have permission to update this order")
+            throw ForbiddenException("No tienes permiso para modificar este pedido")
         }
-        val updated = pedidoService.update(id, dto)
+        // Si el usuario NO es admin, forzamos el status al que ya tenía:
+        val safeDto = if (!isAdmin(authentication)) {
+            dto.copy(status = existing.status)
+        } else {
+            // ADMIN solo puede cambiar de PENDING a DELIVERED
+            if (dto.status == PedidoStatus.DELIVERED || dto.status == PedidoStatus.PENDING) {
+                dto
+            } else {
+                throw BadRequestException("Estado inválido")
+            }
+        }
+        val updated = pedidoService.update(id, safeDto)
         return ResponseEntity.ok(updated)
     }
 

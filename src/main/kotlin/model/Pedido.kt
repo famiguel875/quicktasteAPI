@@ -10,6 +10,7 @@ data class Pedido(
     val productos: List<String>,     // Lista de Producto.name
     val cantidad: Int,               // total de ítems
     val coste: Double,               // suma de price×cantidad
-    val direccion: String
+    val direccion: String,
+    val status: PedidoStatus = PedidoStatus.PENDING
 )
 

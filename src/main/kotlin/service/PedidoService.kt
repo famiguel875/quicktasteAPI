@@ -28,7 +28,7 @@ class PedidoService(
     fun findByUserEmail(userEmail: String): List<PedidoDTO> =
         pedidoRepository.findByUserEmail(userEmail).map { it.toDTO() }
 
-    /** Creates an order, ignoring dto.id so Mongo generates one */
+    /** Creates an order, ignoring dto. id so Mongo generates one */
     fun create(dto: PedidoDTO): PedidoDTO {
         val entity = Pedido(
             id         = null,
@@ -44,17 +44,26 @@ class PedidoService(
 
     /** Updates an existing order (does not change the id) */
     fun update(id: String, dto: PedidoDTO): PedidoDTO {
-        if (id != dto.id) throw BadRequestException("ID cannot be modified")
+        if (id != dto.id) throw BadRequestException("ID no se puede modificar")
         val existing = pedidoRepository.findById(id)
-            .orElseThrow { NotFoundException("Order '$id' not found") }
-        val updated = existing.copy(
+            .orElseThrow { NotFoundException("Pedido '$id' no encontrado") }
+
+        // Construimos la copia respetando el status existente,
+        // y luego permitimos al controller sobreescribir solo si es ADMIN.
+        val base = existing.copy(
             userEmail = dto.userEmail,
             productos = dto.productos,
             cantidad  = dto.cantidad,
             coste     = dto.coste,
-            direccion = dto.direccion
+            direccion = dto.direccion,
+            status    = existing.status
         )
-        return pedidoRepository.save(updated).toDTO()
+        val toSave = dto.status.takeIf { it != existing.status }?.let {
+            // el controller ya validó que solo ADMIN puede cambiar status
+            base.copy(status = it)
+        } ?: base
+
+        return pedidoRepository.save(toSave).toDTO()
     }
 
     /** Deletes an order by its ID */
@@ -70,11 +79,12 @@ class PedidoService(
     // ——————————————————————————————
     private fun Pedido.toDTO(): PedidoDTO =
         PedidoDTO(
-            id         = this.id,
-            userEmail  = this.userEmail,
-            productos  = this.productos,
-            cantidad   = this.cantidad,
-            coste      = this.coste,
-            direccion  = this.direccion
+            id        = this.id,
+            userEmail = this.userEmail,
+            productos = this.productos,
+            cantidad  = this.cantidad,
+            coste     = this.coste,
+            direccion = this.direccion,
+            status    = this.status
         )
 }
