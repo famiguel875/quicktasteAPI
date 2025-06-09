@@ -41,6 +41,9 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	implementation("org.mongodb:mongodb-driver-kotlin-sync:5.3.0")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
+	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("org.mockito:mockito-junit-jupiter:4.+")
+	testImplementation("com.ninja-squad:springmockk:3.1.1")
 }
 
 kotlin {
